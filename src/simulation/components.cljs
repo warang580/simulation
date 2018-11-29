@@ -18,6 +18,12 @@
    (assoc state :velocity velocity
                 :acceleration acceleration)))
 
+(defn follow-mouse [state]
+  (assoc state :follow-mouse true))
+
+(defn render [state f]
+  (assoc state :render f))
+
 ; @TODO: Movable target
 (defn seek
   ([state target]

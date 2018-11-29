@@ -4,48 +4,57 @@
             [simulation.components :as c]
             [simulation.systems :as s]))
 
-; @TODO: add a mouse entity that "follows" (is) the mouse
-
-(defn make-entity []
+(defn center []
   (-> {}
-      (c/position)
-      (c/can-move [0 0])
-      ; @TODO: be able to add seek behaviours and target entities
-      (c/seek [(q/mouse-x) (q/mouse-y)] 3 0.2 100 -1)
-      (c/seek [(/ (q/width) 2) (/ (q/height) 2)])))
+    (assoc :center true)
+    (c/position [(/ (q/width) 2) (/ (q/height) 2)])))
+
+(defn mouse []
+  (-> {}
+    (assoc :mouse true)
+    (c/position [(/ (q/width) 2) (/ (q/height) 2)])
+    (c/follow-mouse)))
+
+(defn bird []
+  (-> {}
+    (assoc :bird true)
+    (c/position [0 0])
+    (c/can-move)
+    (c/seek :mouse)
+    (c/render (fn [entity]
+                (q/fill 10 100)
+                (q/stroke 20)
+                (q/push-matrix)
+                (let [[x y] (:position entity)]
+                  (q/translate x y)
+                  (let [[vx vy] (:velocity entity)]
+                    (q/rotate (Math/atan2 vy vx)))
+                  (q/triangle 0 -2, 5 0, 0 2))
+                (q/pop-matrix)))))
 
 (defn setup []
   (q/frame-rate 100)
   (q/color-mode :hsb)
-  {:entities (vec (repeatedly 5 make-entity))})
+  {:entities [(mouse) (center) (bird)]})
 
 (defn update-entities [state entities]
   (->> entities
-    (mapv #(s/seek state %))
-    (mapv #(s/move state %))))
+     (mapv #(s/seek state %))
+     (mapv #(s/move state %))
+     (mapv #(s/follow-mouse state %))))
 
 (defn update-state [state]
   (let [entities (:entities state)]
     (assoc state :entities (update-entities state entities))))
 
-; @TODO: renderable as a system/component ?
-(defn draw-entity [entity]
-  (q/fill 10 100)
-  (q/stroke 20)
-  (q/push-matrix)
-  (let [[x y] (:position entity)]
-    (q/translate x y)
-    (let [[vx vy] (:velocity entity)]
-      (q/rotate (Math/atan2 vy vx)))
-    (q/triangle 0 -2, 5 0, 0 2))
-  (q/pop-matrix))
-
 (defn draw-state [state]
   ; Clear screen
   (q/background 240)
   ; Show entities
-  (doseq [e (:entities state)]
-    (draw-entity e))
+  (let [entities   (:entities state)
+        renderable (filterv #(contains? % :render) entities)]
+    (doseq [e renderable]
+      ((:render e) e)))
   ; Show FPS
   (q/fill 0)
   (q/stroke 0)
