@@ -4,11 +4,6 @@
             [simulation.components :as c]
             [simulation.systems :as s]))
 
-(defn setup []
-  (q/frame-rate 100)
-  (q/color-mode :hsb)
-  {:entities (vec (repeatedly 5 make-entity))})
-
 ; @TODO: add a mouse entity that "follows" (is) the mouse
 
 (defn make-entity []
@@ -18,6 +13,11 @@
       ; @TODO: be able to add seek behaviours and target entities
       (c/seek [(q/mouse-x) (q/mouse-y)] 3 0.2 100 -1)
       (c/seek [(/ (q/width) 2) (/ (q/height) 2)])))
+
+(defn setup []
+  (q/frame-rate 100)
+  (q/color-mode :hsb)
+  {:entities (vec (repeatedly 5 make-entity))})
 
 (defn update-entities [state entities]
   (->> entities
